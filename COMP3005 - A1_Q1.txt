@@ -1,0 +1,91 @@
+﻿--Create a table if it does not exist
+CREATE TABLE IF NOT EXISTS students (
+    student_id SERIAL PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    enrollment_date DATE
+);
+
+
+--Insert the students
+INSERT INTO students (first_name, last_name, email, enrollment_date) 
+VALUES
+('John', 'Doe', 'john.doe@example.com', '2023-09-01'),
+('Jane', 'Smith', 'jane.smith@example.com', '2023-09-01'),
+('Jim', 'Beam', 'jim.beam@example.com', '2023-09-02')
+ON CONFLICT (email) DO NOTHING
+
+
+--Get's all the students
+CREATE OR REPLACE FUNCTION getAllStudents()
+RETURNS TABLE (
+    student_id INTEGER,
+    first_name TEXT,
+    last_name TEXT,
+    email TEXT,
+    enrollment_date DATE
+) AS $$
+BEGIN
+    RETURN QUERY SELECT * FROM students;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+--Add a student 
+CREATE OR REPLACE FUNCTION addStudent(
+    new_first_name TEXT,
+    new_last_name TEXT,
+    new_email TEXT,
+    new_enrollment_date DATE
+)
+RETURNS VOID AS $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM students WHERE email = new_email) THEN
+        RAISE NOTICE 'Student with email exists.';
+    ELSE
+        INSERT INTO students (first_name, last_name, email, enrollment_date)
+        VALUES (new_first_name, new_last_name, new_email, new_enrollment_date);
+    END IF;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+--Updates email based off student id
+CREATE OR REPLACE FUNCTION updateEmail(
+    s_id INTEGER,
+    new_email TEXT
+)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE students
+    SET email = new_email
+    WHERE student_id = s_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+
+
+
+
+--Deletes a student
+CREATE OR REPLACE FUNCTION deleteStudent(
+    del_student_id INTEGER
+)
+RETURNS VOID AS $$
+BEGIN
+    DELETE FROM students
+    WHERE student_id = del_student_id;
+END;
+$$ LANGUAGE plpgsql;
+
+
+--SELECT addStudent('Johddn', 'Dodde', 'john.doed@example.com', '2023-09-01');
+--SELECT updateEmail(1, 'new.email@example.com');
+--SELECT deleteStudent(2);
+--SELECT * FROM getAllStudents();
